@@ -18,14 +18,24 @@ def recommendations(
     limit: int = Query(default=10, ge=1, le=50),
 ):
     routes_query = text("""
-        SELECT r.id, r.name, r.city, r.distance_km,
-               s.day_type, s.suitability_score, s.rationale
-        FROM route r
-        JOIN route_score s ON s.route_id = r.id
-        WHERE s.day_type = :day_type
-        ORDER BY s.suitability_score DESC
-        LIMIT :limit
-    """)
+    SELECT
+        r.id,
+        r.name,
+        r.city,
+        r.distance_km,
+        s.day_type,
+        s.suitability_score,
+        s.popularity_score,
+        s.accessibility_score,
+        s.congestion_penalty,
+        s.rationale
+    FROM route r
+    JOIN route_score s ON s.route_id = r.id
+    WHERE s.day_type = :day_type
+    ORDER BY s.suitability_score DESC
+    LIMIT :limit
+""")
+
 
     windows_query = text("""
         SELECT start_hour, end_hour, expected_crowd_score

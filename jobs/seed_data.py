@@ -14,12 +14,37 @@ routes = [
     {"id": str(uuid4()), "name": "Kits Beach Out and Back", "city": "Vancouver", "distance_km": 6.0},
 ]
 
-def suitability_score(distance_km: float) -> float:
+def clamp01(x: float) -> float:
+    return max(0.0, min(1.0, x))
+
+def calc_accessibility(distance_km: float) -> float:
+    # Inclusive community run target is ~5K
     target = 5.0
-    penalty = abs(distance_km - target)
-    return round(max(0.0, 1.0 - (penalty / 5.0)), 2)
+    penalty = abs(distance_km - target) / 5.0
+    return round(clamp01(1.0 - penalty), 2)
+
+def calc_popularity_seed(name: str) -> float:
+    # Placeholder until heatmap integration.
+    # Just making the seed data feel realistic.
+    if "Seawall" in name:
+        return 0.9
+    if "Stanley" in name:
+        return 0.85
+    return 0.7
+
+def calc_congestion_seed(popularity: float) -> float:
+    # Simple proxy: very popular routes can have crowding hotspots
+    return round(clamp01(popularity * 0.6), 2)
+
+def calc_suitability(popularity: float, accessibility: float, congestion: float) -> float:
+    suitability = (0.55 * popularity) + (0.35 * accessibility) - (0.30 * congestion)
+    return round(clamp01(suitability), 2)
 
 with engine.begin() as conn:
+    # Make reruns safe
+    conn.execute(text("DELETE FROM route_score"))
+    conn.execute(text("DELETE FROM route"))
+
     for r in routes:
         conn.execute(
             text("""
@@ -29,22 +54,43 @@ with engine.begin() as conn:
             r
         )
 
+        popularity = calc_popularity_seed(r["name"])
+        accessibility = calc_accessibility(float(r["distance_km"]))
+        congestion = calc_congestion_seed(popularity)
+        suitability = calc_suitability(popularity, accessibility, congestion)
+
         rationale = {
-            "why_accessible": "Distance close to 5 km, suitable for inclusive community runs",
-            "note": "Seed scoring only, heatmap integration coming next"
+            "summary": "Balanced option for a community run based on popularity and accessibility.",
+            "subscores": {
+                "popularity_score": popularity,
+                "accessibility_score": accessibility,
+                "congestion_penalty": congestion
+            },
+            "notes": [
+                "Seed scoring uses placeholder popularity and congestion signals until heatmap integration."
+            ]
         }
 
         conn.execute(
             text("""
-                INSERT INTO route_score (route_id, day_type, suitability_score, rationale)
-                VALUES (:route_id, :day_type, :score, CAST(:rationale AS jsonb))
+                INSERT INTO route_score (
+                    route_id, day_type, suitability_score, rationale,
+                    popularity_score, accessibility_score, congestion_penalty
+                )
+                VALUES (
+                    :route_id, :day_type, :suitability, CAST(:rationale AS jsonb),
+                    :popularity, :accessibility, :congestion
+                )
             """),
             {
                 "route_id": r["id"],
                 "day_type": "weekend",
-                "score": suitability_score(r["distance_km"]),
+                "suitability": suitability,
                 "rationale": json.dumps(rationale),
+                "popularity": popularity,
+                "accessibility": accessibility,
+                "congestion": congestion,
             }
         )
 
-print("Seed data inserted")
+print("Seed data inserted with subscores")

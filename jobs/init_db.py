@@ -22,6 +22,15 @@ CREATE TABLE IF NOT EXISTS route_score (
   rationale JSONB NOT NULL
 );
 
+ALTER TABLE route_score
+  ADD COLUMN IF NOT EXISTS popularity_score NUMERIC;
+
+ALTER TABLE route_score
+  ADD COLUMN IF NOT EXISTS accessibility_score NUMERIC;
+
+ALTER TABLE route_score
+  ADD COLUMN IF NOT EXISTS congestion_penalty NUMERIC;
+
 CREATE TABLE IF NOT EXISTS time_window (
   id SERIAL PRIMARY KEY,
   city TEXT NOT NULL,
