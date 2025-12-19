@@ -21,6 +21,15 @@ CREATE TABLE IF NOT EXISTS route_score (
   suitability_score NUMERIC NOT NULL,
   rationale JSONB NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS time_window (
+  id SERIAL PRIMARY KEY,
+  city TEXT NOT NULL,
+  day_type TEXT NOT NULL,
+  start_hour INT NOT NULL,
+  end_hour INT NOT NULL,
+  expected_crowd_score NUMERIC NOT NULL
+);
 """
 
 with engine.begin() as conn:

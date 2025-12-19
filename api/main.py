@@ -17,7 +17,7 @@ def recommendations(
     day_type: str = Query(default="weekend"),
     limit: int = Query(default=10, ge=1, le=50),
 ):
-    q = text("""
+    routes_query = text("""
         SELECT r.id, r.name, r.city, r.distance_km,
                s.day_type, s.suitability_score, s.rationale
         FROM route r
@@ -27,7 +27,27 @@ def recommendations(
         LIMIT :limit
     """)
 
-    with engine.begin() as conn:
-        rows = conn.execute(q, {"day_type": day_type, "limit": limit}).mappings().all()
+    windows_query = text("""
+        SELECT start_hour, end_hour, expected_crowd_score
+        FROM time_window
+        WHERE day_type = :day_type AND city = 'Vancouver'
+        ORDER BY expected_crowd_score DESC
+    """)
 
-    return {"results": rows}
+    with engine.begin() as conn:
+        routes = conn.execute(
+            routes_query,
+            {"day_type": day_type, "limit": limit}
+        ).mappings().all()
+
+        windows = conn.execute(
+            windows_query,
+            {"day_type": day_type}
+        ).mappings().all()
+
+    return {
+        "day_type": day_type,
+        "recommended_time_windows": windows,
+        "routes": routes,
+    }
+
