@@ -7,6 +7,16 @@ A small backend service that recommends Vancouver community run routes using a P
 - Postgres (Docker)
 - SQLAlchemy (for DB connection)
 
+## CI
+
+GitHub Actions runs tests on every pull request and on pushes to master.
+
+If GitHub Actions is unavailable, run the same checks locally:
+
+```bash
+python -m pip install -r requirements.txt
+python -m pytest
+``` 
 ## Run locally
 
 ### 1 Start Postgres
