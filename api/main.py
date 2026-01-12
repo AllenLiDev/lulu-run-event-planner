@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, Query
 from sqlalchemy import create_engine, text
@@ -8,9 +9,11 @@ engine = create_engine(os.environ["DATABASE_URL"])
 
 app = FastAPI(title="Vancouver Run Event Planner")
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
 
 @app.get("/recommendations")
 def recommendations(
@@ -36,7 +39,6 @@ def recommendations(
     LIMIT :limit
 """)
 
-
     windows_query = text("""
         SELECT start_hour, end_hour, expected_crowd_score
         FROM time_window
@@ -45,19 +47,12 @@ def recommendations(
     """)
 
     with engine.begin() as conn:
-        routes = conn.execute(
-            routes_query,
-            {"day_type": day_type, "limit": limit}
-        ).mappings().all()
+        routes = conn.execute(routes_query, {"day_type": day_type, "limit": limit}).mappings().all()
 
-        windows = conn.execute(
-            windows_query,
-            {"day_type": day_type}
-        ).mappings().all()
+        windows = conn.execute(windows_query, {"day_type": day_type}).mappings().all()
 
     return {
         "day_type": day_type,
         "recommended_time_windows": windows,
         "routes": routes,
     }
-
