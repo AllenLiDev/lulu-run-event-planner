@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from uuid import uuid4
 
 from dotenv import load_dotenv
@@ -11,17 +11,25 @@ engine = create_engine(os.environ["DATABASE_URL"])
 routes = [
     {"id": str(uuid4()), "name": "Seawall Easy 5K", "city": "Vancouver", "distance_km": 5.0},
     {"id": str(uuid4()), "name": "Stanley Park Loop", "city": "Vancouver", "distance_km": 9.0},
-    {"id": str(uuid4()), "name": "Kits Beach Out and Back", "city": "Vancouver", "distance_km": 6.0},
+    {
+        "id": str(uuid4()),
+        "name": "Kits Beach Out and Back",
+        "city": "Vancouver",
+        "distance_km": 6.0,
+    },
 ]
+
 
 def clamp01(x: float) -> float:
     return max(0.0, min(1.0, x))
+
 
 def calc_accessibility(distance_km: float) -> float:
     # Inclusive community run target is ~5K
     target = 5.0
     penalty = abs(distance_km - target) / 5.0
     return round(clamp01(1.0 - penalty), 2)
+
 
 def calc_popularity_seed(name: str) -> float:
     # Placeholder until heatmap integration.
@@ -32,13 +40,16 @@ def calc_popularity_seed(name: str) -> float:
         return 0.85
     return 0.7
 
+
 def calc_congestion_seed(popularity: float) -> float:
     # Simple proxy: very popular routes can have crowding hotspots
     return round(clamp01(popularity * 0.6), 2)
 
+
 def calc_suitability(popularity: float, accessibility: float, congestion: float) -> float:
     suitability = (0.55 * popularity) + (0.35 * accessibility) - (0.30 * congestion)
     return round(clamp01(suitability), 2)
+
 
 with engine.begin() as conn:
     # Make reruns safe
@@ -51,7 +62,7 @@ with engine.begin() as conn:
                 INSERT INTO route (id, name, city, distance_km)
                 VALUES (:id, :name, :city, :distance_km)
             """),
-            r
+            r,
         )
 
         popularity = calc_popularity_seed(r["name"])
@@ -64,11 +75,12 @@ with engine.begin() as conn:
             "subscores": {
                 "popularity_score": popularity,
                 "accessibility_score": accessibility,
-                "congestion_penalty": congestion
+                "congestion_penalty": congestion,
             },
             "notes": [
-                "Seed scoring uses placeholder popularity and congestion signals until heatmap integration."
-            ]
+                "Seed scoring uses placeholder popularity"
+                + "and congestion signals until heatmap integration."
+            ],
         }
 
         conn.execute(
@@ -90,7 +102,7 @@ with engine.begin() as conn:
                 "popularity": popularity,
                 "accessibility": accessibility,
                 "congestion": congestion,
-            }
+            },
         )
 
 print("Seed data inserted with subscores")
