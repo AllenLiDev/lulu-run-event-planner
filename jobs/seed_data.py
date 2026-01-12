@@ -78,7 +78,7 @@ with engine.begin() as conn:
                 "congestion_penalty": congestion,
             },
             "notes": [
-                "Seed scoring uses placeholder popularity" 
+                "Seed scoring uses placeholder popularity"
                 + "and congestion signals until heatmap integration."
             ],
         }
