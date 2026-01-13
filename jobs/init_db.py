@@ -40,6 +40,16 @@ CREATE TABLE IF NOT EXISTS time_window (
   end_hour INT NOT NULL,
   expected_crowd_score NUMERIC NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS heat_cell (
+  id SERIAL PRIMARY KEY,
+  cell_id TEXT NOT NULL UNIQUE,
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  intensity INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 """
 
 with engine.begin() as conn:
