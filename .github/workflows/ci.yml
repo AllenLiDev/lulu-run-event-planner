@@ -44,6 +44,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
+      - name: Initialize DB schema
+        run: |
+          python jobs/init_db.py
+
       - name: Ruff format check
         run: |
           python -m ruff format --check .
