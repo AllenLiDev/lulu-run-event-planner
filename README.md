@@ -1,4 +1,4 @@
-# Lululemon Run Event Planner
+# Run Event Planner
 
 A small backend service that recommends Vancouver community run routes using a Postgres data model and a FastAPI API.
 
