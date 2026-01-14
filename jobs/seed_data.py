@@ -30,19 +30,19 @@ def calc_accessibility(distance_km: float) -> float:
     penalty = abs(distance_km - target) / 5.0
     return round(clamp01(1.0 - penalty), 2)
 
+
 def calc_popularity_from_heat(conn) -> float:
     """
     Temporary heat-based popularity proxy.
     Uses total heat intensity across the city.
     """
-    result = conn.execute(
-        text("SELECT COALESCE(SUM(intensity), 0) FROM heat_cell")
-    )
+    result = conn.execute(text("SELECT COALESCE(SUM(intensity), 0) FROM heat_cell"))
     total_heat = result.scalar_one()
 
     # Normalize to 0–1 range using a soft cap
     normalized = min(total_heat / 100.0, 1.0)
     return round(normalized, 2)
+
 
 def calc_popularity_seed(name: str) -> float:
     # Placeholder until heatmap integration.
@@ -90,9 +90,7 @@ with engine.begin() as conn:
                 "accessibility_score": accessibility,
                 "congestion_penalty": congestion,
             },
-            "notes": [
-                "Popularity is derived from heat_cell intensity."
-            ],
+            "notes": ["Popularity is derived from heat_cell intensity."],
         }
 
         conn.execute(
