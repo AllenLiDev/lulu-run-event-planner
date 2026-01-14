@@ -30,6 +30,19 @@ def calc_accessibility(distance_km: float) -> float:
     penalty = abs(distance_km - target) / 5.0
     return round(clamp01(1.0 - penalty), 2)
 
+def calc_popularity_from_heat(conn) -> float:
+    """
+    Temporary heat-based popularity proxy.
+    Uses total heat intensity across the city.
+    """
+    result = conn.execute(
+        text("SELECT COALESCE(SUM(intensity), 0) FROM heat_cell")
+    )
+    total_heat = result.scalar_one()
+
+    # Normalize to 0–1 range using a soft cap
+    normalized = min(total_heat / 100.0, 1.0)
+    return round(normalized, 2)
 
 def calc_popularity_seed(name: str) -> float:
     # Placeholder until heatmap integration.
@@ -65,21 +78,20 @@ with engine.begin() as conn:
             r,
         )
 
-        popularity = calc_popularity_seed(r["name"])
+        popularity = calc_popularity_from_heat(conn)
         accessibility = calc_accessibility(float(r["distance_km"]))
         congestion = calc_congestion_seed(popularity)
         suitability = calc_suitability(popularity, accessibility, congestion)
 
         rationale = {
-            "summary": "Balanced option for a community run based on popularity and accessibility.",
+            "summary": "Scored using heat based popularity, accessibility, and congestion.",
             "subscores": {
                 "popularity_score": popularity,
                 "accessibility_score": accessibility,
                 "congestion_penalty": congestion,
             },
             "notes": [
-                "Seed scoring uses placeholder popularity"
-                + "and congestion signals until heatmap integration."
+                "Popularity is derived from heat_cell intensity."
             ],
         }
 
